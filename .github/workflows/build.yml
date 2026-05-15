@@ -1,0 +1,33 @@
+name: build.yml
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    env:
+      TARGET: armv7-unknown-linux-musleabihf
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: 7027d45303b412be6fa9c09d689cc6276748fb38
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ env.TARGET }}
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools gcc-arm-linux-gnueabihf
+      - run: cargo build --release --target $TARGET
+        env:
+          CARGO_TARGET_ARM_UNKNOWN_LINUX_MUSLEABIHF_LINKER: arm-linux-gnueabihf-gcc
+      - run: |
+          mkdir -p build
+          cp target/${{ env.TARGET }}/release/fd build/fd
+      - uses: actions/upload-artifact@v7
+        with:
+          name: fd-binary
+          path: build/
